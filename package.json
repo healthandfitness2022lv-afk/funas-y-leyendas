@@ -1,0 +1,16 @@
+{
+  "name": "funas-y-leyendas",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test:utils": "node --test tests/utils.test.js",
+    "test:rules": "firebase emulators:exec --only firestore,storage --project demo-funas \"node --test --test-concurrency=1 tests/rules.test.js\"",
+    "test": "npm run test:utils && npm run test:rules",
+    "serve": "firebase emulators:start --project demo-funas"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.14.1",
+    "firebase-tools": "^13.29.0"
+  }
+}

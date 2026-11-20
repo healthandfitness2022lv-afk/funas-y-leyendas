@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Descargo · Funas y Leyendas</title>
+<meta name="description" content="Consulta reportes moderados de malas prácticas en la compra-venta de cartas de Mitos y Leyendas.">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="index.html">⚔️ Funas y Leyendas</a>
+  <nav><a href="index.html">Buscar</a><a href="reportar.html">Reportar</a><a href="terminos.html">Términos</a></nav>
+  <div id="sesion"></div>
+</header>
+<main>
+<div id="aviso" role="status" aria-live="polite"></div>
+<h1>Solicitar descargo</h1>
+<p class="muted">Si apareces en un reporte y crees que es falso o ya se resolvió, cuéntanos. Moderación revisará y puede retirar el reporte.</p>
+<div id="requiere-login" class="card">Debes <strong>entrar con Google</strong> para enviar un descargo.</div>
+<form id="form-descargo" class="form" hidden>
+  <label>ID del reporte <input name="reporteId" readonly></label>
+  <label>Tu descargo *
+    <textarea name="mensaje" rows="5" minlength="20" maxlength="2000" required></textarea></label>
+  <label>Correo o teléfono de contacto *
+    <input name="contacto" maxlength="120" required></label>
+  <button class="btn" type="submit">Enviar descargo</button>
+</form>
+</main>
+<footer>Plataforma comunitaria independiente. Los reportes son opiniones de usuarios, revisados por moderación. <a href="terminos.html">Términos y descargo</a>.</footer>
+<script type="module" src="js/descargo.js"></script>
+</body>
+</html>

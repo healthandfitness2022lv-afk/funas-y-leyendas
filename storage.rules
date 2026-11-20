@@ -1,0 +1,32 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAdmin() {
+      return request.auth != null
+        && firestore.exists(/databases/(default)/documents/admins/$(request.auth.uid));
+    }
+
+    // evidencias/{uid}/{reporteId}/{archivo}
+    match /evidencias/{uid}/{reporteId}/{file} {
+      // Subir: solo el dueño, solo imágenes, máx 5 MB, sin sobrescribir.
+      allow create: if request.auth != null
+        && request.auth.uid == uid
+        && request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/(jpeg|png|webp)');
+
+      // Ver: autor, admin, o cualquiera con login si el reporte está aprobado.
+      allow read: if request.auth != null && (
+           request.auth.uid == uid
+        || isAdmin()
+        || firestore.get(/databases/(default)/documents/reportes/$(reporteId)).data.estado == 'aprobado');
+
+      allow update: if false;
+      allow delete: if isAdmin();
+    }
+
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

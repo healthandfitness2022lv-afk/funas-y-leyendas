@@ -1,0 +1,69 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function str(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+
+    // Solo se gestiona desde la consola de Firebase.
+    match /admins/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow write: if false;
+    }
+
+    match /reportes/{id} {
+      // Público: solo reportes aprobados. Autor y admin ven los suyos/pendientes.
+      allow get, list: if resource.data.estado == 'aprobado'
+                       || isAdmin()
+                       || (signedIn() && resource.data.creadoPor == request.auth.uid);
+
+      // Crear: con login, siempre entra como 'pendiente' (moderación previa).
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(
+             ['telefono','titular','rut','motivo','evidenciaPath','nombreTokens',
+              'estado','creadoPor','creadoEn','aceptaTerminos'])
+        && request.resource.data.keys().hasAll(
+             ['titular','motivo','nombreTokens','estado','creadoPor','creadoEn','aceptaTerminos'])
+        && request.resource.data.estado == 'pendiente'
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time
+        && request.resource.data.aceptaTerminos == true
+        && str(request.resource.data.titular, 3, 80)
+        && str(request.resource.data.motivo, 20, 1000)
+        && (!('telefono' in request.resource.data) || request.resource.data.telefono.matches('^\\+?[0-9]{8,12}$'))
+        && (!('rut' in request.resource.data) || request.resource.data.rut.matches('^[0-9]{7,8}-[0-9K]$'))
+        && ('telefono' in request.resource.data || 'rut' in request.resource.data)
+        && (!('evidenciaPath' in request.resource.data)
+            || request.resource.data.evidenciaPath.matches('^evidencias/' + request.auth.uid + '/' + id + '/[A-Za-z0-9._-]{1,80}$'))
+        && request.resource.data.nombreTokens is list
+        && request.resource.data.nombreTokens.size() <= 8;
+
+      // Moderación: solo admin cambia estado / nota.
+      allow update: if isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys()
+             .hasOnly(['estado','notaModeracion','moderadoPor','moderadoEn'])
+        && request.resource.data.estado in ['pendiente','aprobado','rechazado','retirado'];
+
+      allow delete: if isAdmin();
+    }
+
+    // Derecho a réplica / descargo: cualquiera con login puede enviar; solo admin lee.
+    match /descargos/{id} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['reporteId','mensaje','contacto','creadoPor','creadoEn'])
+        && str(request.resource.data.reporteId, 1, 64)
+        && str(request.resource.data.mensaje, 20, 2000)
+        && str(request.resource.data.contacto, 5, 120)
+        && request.resource.data.creadoPor == request.auth.uid
+        && request.resource.data.creadoEn == request.time;
+      allow read, update, delete: if isAdmin();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

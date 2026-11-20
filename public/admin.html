@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Moderación · Funas y Leyendas</title>
+<meta name="robots" content="noindex">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="index.html">⚔️ Funas y Leyendas</a>
+  <nav><a href="index.html">Buscar</a><a href="reportar.html">Reportar</a><a href="terminos.html">Términos</a></nav>
+  <div id="sesion"></div>
+</header>
+<main>
+<div id="aviso" role="status" aria-live="polite"></div>
+<h1>Moderación</h1>
+<select id="filtro" hidden aria-label="Filtrar">
+  <option value="pendiente">Pendientes</option>
+  <option value="aprobado">Aprobados</option>
+  <option value="rechazado">Rechazados</option>
+  <option value="retirado">Retirados</option>
+  <option value="descargos">Descargos</option>
+</select>
+<section id="panel"></section>
+</main>
+<footer>Plataforma comunitaria independiente. Los reportes son opiniones de usuarios, revisados por moderación. <a href="terminos.html">Términos y descargo</a>.</footer>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>

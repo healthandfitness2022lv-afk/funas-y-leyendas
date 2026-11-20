@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Buscar · Funas y Leyendas</title>
+<meta name="description" content="Consulta reportes moderados de malas prácticas en la compra-venta de cartas de Mitos y Leyendas.">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="index.html">⚔️ Funas y Leyendas</a>
+  <nav><a href="index.html">Buscar</a><a href="reportar.html">Reportar</a><a href="terminos.html">Términos</a></nav>
+  <div id="sesion"></div>
+</header>
+<main>
+<div id="aviso" role="status" aria-live="polite"></div>
+<section class="hero">
+  <h1>¿Vas a transferir? Revisa antes.</h1>
+  <p>Busca por teléfono, RUT o nombre del titular de la cuenta.</p>
+  <form id="form-buscar" class="buscar" role="search">
+    <label for="q" class="sr-only">Teléfono, RUT o nombre</label>
+    <input id="q" name="q" placeholder="+56 9 1234 5678 · 12.345.678-K · Juan Pérez" autocomplete="off" required>
+    <button class="btn" type="submit">Buscar</button>
+  </form>
+</section>
+<section id="resultados" aria-live="polite"></section>
+</main>
+<footer>Plataforma comunitaria independiente. Los reportes son opiniones de usuarios, revisados por moderación. <a href="terminos.html">Términos y descargo</a>.</footer>
+<script type="module" src="js/buscar.js"></script>
+</body>
+</html>

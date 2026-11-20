@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reportar · Funas y Leyendas</title>
+<meta name="description" content="Consulta reportes moderados de malas prácticas en la compra-venta de cartas de Mitos y Leyendas.">
+<link rel="stylesheet" href="css/estilos.css">
+</head>
+<body>
+<header class="top">
+  <a class="logo" href="index.html">⚔️ Funas y Leyendas</a>
+  <nav><a href="index.html">Buscar</a><a href="reportar.html">Reportar</a><a href="terminos.html">Términos</a></nav>
+  <div id="sesion"></div>
+</header>
+<main>
+<div id="aviso" role="status" aria-live="polite"></div>
+<h1>Reportar una funa</h1>
+<p class="muted">Todo reporte pasa por moderación antes de publicarse. Reporta solo hechos que puedas respaldar.</p>
+<div id="requiere-login" class="card">Debes <strong>entrar con Google</strong> (arriba a la derecha) para reportar. Así evitamos reportes falsos.</div>
+<form id="form-reporte" class="form" hidden>
+  <label>Nombre del titular de la cuenta a la que transferiste *
+    <input name="titular" maxlength="80" required></label>
+  <div class="fila">
+    <label>RUT del titular
+      <input name="rut" placeholder="12.345.678-K" maxlength="12"></label>
+    <label>Teléfono
+      <input name="telefono" type="tel" placeholder="+56 9 1234 5678" maxlength="16"></label>
+  </div>
+  <p class="muted small">Ingresa al menos RUT o teléfono.</p>
+  <label>Motivo de la funa *
+    <textarea name="motivo" rows="5" minlength="20" maxlength="1000" required placeholder="Qué pasó, cuándo, monto y en qué grupo. Sin insultos."></textarea></label>
+  <label>Evidencia (opcional, JPG/PNG/WEBP, máx 5 MB)
+    <input name="evidencia" type="file" accept="image/jpeg,image/png,image/webp"></label>
+  <p class="muted small">Tapa datos de terceros que no tengan relación (otros chats, direcciones, etc.).</p>
+  <label class="check"><input type="checkbox" name="terminos" required>
+    Declaro que la información es verídica y acepto los <a href="terminos.html" target="_blank">términos</a>.</label>
+  <button class="btn" type="submit">Enviar reporte</button>
+</form>
+</main>
+<footer>Plataforma comunitaria independiente. Los reportes son opiniones de usuarios, revisados por moderación. <a href="terminos.html">Términos y descargo</a>.</footer>
+<script type="module" src="js/reportar.js"></script>
+</body>
+</html>
