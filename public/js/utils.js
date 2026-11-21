@@ -43,19 +43,16 @@ export function quitarTildes(s) {
   return s.normalize("NFD").replace(/[\u0300-\u036f]/g, ""); // á -> a, ñ -> n
 }
 
-/** 12.345.678-K -> 12.345.***-K */
+/** 12.345.678-K -> **.***.***-K (solo el DV: evita adivinar el RUT a partir de la máscara) */
 export function enmascararRut(rut) {
   if (!rut) return "";
-  const [cuerpo, dv] = rut.split("-");
-  const fmt = cuerpo.replace(/\B(?=(\d{3})+(?!\d))/g, ".");
-  return fmt.replace(/\d{3}$/, "***") + "-" + dv;
+  return "**.***.***-" + rut.split("-")[1];
 }
 
-/** 56912345678 -> +56 9 **** 5678 */
+/** 56912345678 -> +56 9 **** **78 */
 export function enmascararTelefono(tel) {
   if (!tel) return "";
-  const fin = tel.slice(-4);
-  return tel.startsWith("569") ? `+56 9 **** ${fin}` : `****${fin}`;
+  return (tel.startsWith("569") ? "+56 9 " : "") + "**** **" + tel.slice(-2);
 }
 
 /** Detecta qué tipo de búsqueda escribió el usuario. */
@@ -79,8 +76,8 @@ export function extensionSegura(file) {
 }
 
 /**
- * Hash SHA-256 (hex) de un RUT o teléfono normalizado. Lo público guarda solo el hash
- * y la versión enmascarada; el dato real queda en reportes/{id}/privado/datos.
+ * Hash SHA-256 (hex) de un RUT o teléfono normalizado. Se usa solo como ID del índice
+ * de búsqueda (indice/{hash}/r/{reporteId}); el documento público no lo contiene.
  */
 export async function hashDato(valor) {
   const buf = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(valor));

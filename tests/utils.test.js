@@ -18,8 +18,8 @@ test("Tokens", () => {
   assert.deepEqual(tokensNombre("José Ñuñez de la Peña"), ["jose", "nunez", "pena"]);
 });
 test("Máscaras", () => {
-  assert.equal(enmascararRut("12345678-5"), "12.345.***-5");
-  assert.equal(enmascararTelefono("56912345678"), "+56 9 **** 5678");
+  assert.equal(enmascararRut("12345678-5"), "**.***.***-5");
+  assert.equal(enmascararTelefono("56912345678"), "+56 9 **** **78");
 });
 test("Clasificar búsqueda", () => {
   assert.deepEqual(clasificarBusqueda("12.345.678-5"), { tipo: "rut", valor: "12345678-5" });

@@ -51,17 +51,18 @@ form.addEventListener("submit", async (ev) => {
       aceptaTerminos: true,
     };
     const privado = {};
-    if (telefono) { data.telHash = await hashDato(telefono); data.telMask = enmascararTelefono(telefono); privado.telefono = telefono; }
-    if (rut) { data.rutHash = await hashDato(rut); data.rutMask = enmascararRut(rut); privado.rut = rut; }
+    if (telefono) { data.telMask = enmascararTelefono(telefono); privado.telefono = telefono; }
+    if (rut) { data.rutMask = enmascararRut(rut); privado.rut = rut; }
     if (archivo) {
       const path = `evidencias/${user.uid}/${docRef.id}/evidencia.${extensionSegura(archivo)}`;
       await uploadBytes(ref(storage, path), archivo, { contentType: archivo.type });
       data.evidenciaPath = path;
     }
-    // Público (hash + máscara) y privado (dato real) en una sola escritura atómica.
+    // Público (máscara), privado (dato real) e índice de búsqueda en una sola escritura atómica.
     const lote = writeBatch(db);
     lote.set(docRef, data);
     lote.set(doc(db, "reportes", docRef.id, "privado", "datos"), privado);
+    for (const v of Object.values(privado)) lote.set(doc(db, "indice", await hashDato(v), "r", docRef.id), {});
     await lote.commit();
     form.reset();
     mostrarAviso("Reporte enviado. Será revisado por moderación antes de publicarse.");
