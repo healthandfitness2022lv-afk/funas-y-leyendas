@@ -3,7 +3,7 @@ import {
   collection, query, where, getDocs, limit
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
-import { clasificarBusqueda, enmascararRut, enmascararTelefono } from "./utils.js";
+import { clasificarBusqueda, hashDato } from "./utils.js";
 
 montarSesion();
 
@@ -20,8 +20,8 @@ form.addEventListener("submit", async (ev) => {
   try {
     const base = collection(db, "reportes");
     let qs;
-    if (q.tipo === "rut") qs = query(base, where("estado", "==", "aprobado"), where("rut", "==", q.valor), limit(50));
-    else if (q.tipo === "telefono") qs = query(base, where("estado", "==", "aprobado"), where("telefono", "==", q.valor), limit(50));
+    if (q.tipo === "rut") qs = query(base, where("estado", "==", "aprobado"), where("rutHash", "==", await hashDato(q.valor)), limit(50));
+    else if (q.tipo === "telefono") qs = query(base, where("estado", "==", "aprobado"), where("telHash", "==", await hashDato(q.valor)), limit(50));
     else {
       const clave = [...q.valor].sort((a, b) => b.length - a.length)[0];
       qs = query(base, where("estado", "==", "aprobado"), where("nombreTokens", "array-contains", clave), limit(50));
@@ -46,8 +46,8 @@ function pintar(docs) {
     const card = el("article", { class: "card" },
       el("h3", {}, d.titular),
       el("dl", {},
-        d.rut ? el("div", {}, el("dt", {}, "RUT"), el("dd", {}, enmascararRut(d.rut))) : null,
-        d.telefono ? el("div", {}, el("dt", {}, "Teléfono"), el("dd", {}, enmascararTelefono(d.telefono))) : null,
+        d.rutMask ? el("div", {}, el("dt", {}, "RUT"), el("dd", {}, d.rutMask)) : null,
+        d.telMask ? el("div", {}, el("dt", {}, "Teléfono"), el("dd", {}, d.telMask)) : null,
         el("div", {}, el("dt", {}, "Fecha"), el("dd", {}, fecha(d.creadoEn)))
       ),
       el("p", { class: "motivo" }, d.motivo),

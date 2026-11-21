@@ -22,10 +22,11 @@ Local: `npm run serve` (emuladores) y abrir `public/` con cualquier servidor en 
 
 ## Pruebas
 - `npm run test:utils` → validación de RUT, teléfono, máscaras y búsqueda.
-- `npm run test:rules` → 25 pruebas de reglas Firestore/Storage en emulador (requiere Java).
+- `npm run test:rules` → 31 pruebas de reglas Firestore/Storage en emulador (requiere Java).
 
 ## Modelo de datos
-`reportes/{id}`: `titular`, `rut` (`12345678-K`), `telefono` (`569XXXXXXXX`), `motivo`, `evidenciaPath`, `nombreTokens[]`, `estado` (`pendiente|aprobado|rechazado|retirado`), `creadoPor`, `creadoEn`, `aceptaTerminos`, `notaModeracion`, `moderadoPor`, `moderadoEn`.
+`reportes/{id}` (público si está aprobado): `titular`, `rutHash`/`telHash` (SHA-256 del dato normalizado), `rutMask`/`telMask`, `motivo`, `evidenciaPath`, `nombreTokens[]`, `estado` (`pendiente|aprobado|rechazado|retirado`), `creadoPor`, `creadoEn`, `aceptaTerminos`, `notaModeracion`, `moderadoPor`, `moderadoEn`.
+`reportes/{id}/privado/datos` (solo autor y admin): `rut` (`12345678-K`), `telefono` (`569XXXXXXXX`). Se crea en el mismo lote que el reporte y las reglas verifican que coincida con el hash.
 `descargos/{id}`: `reporteId`, `mensaje`, `contacto`, `creadoPor`, `creadoEn` (solo admin lee).
 `admins/{uid}`: se crea a mano en la consola.
 Storage: `evidencias/{uid}/{reporteId}/evidencia.{ext}`.
@@ -34,6 +35,7 @@ Storage: `evidencias/{uid}/{reporteId}/evidencia.{ext}`.
 - Público solo lee reportes `aprobado`. Nadie puede autoaprobarse ni suplantar autor.
 - Esquema estricto (campos permitidos, largos, formato RUT/teléfono). Admin solo cambia estado/nota, no el contenido.
 - Evidencia: sube solo el dueño, solo imágenes < 5 MB, sin sobrescribir; la ven autor, admin o usuarios logueados si el reporte está aprobado.
+- El RUT y el teléfono reales nunca se entregan al público: la búsqueda compara hashes. Límite conocido: un hash de RUT se puede revertir por fuerza bruta; para cerrarlo del todo hace falta una Cloud Function con clave secreta (requiere plan Blaze).
 - Todo lo demás denegado.
 
 ## Riesgos legales y mitigaciones

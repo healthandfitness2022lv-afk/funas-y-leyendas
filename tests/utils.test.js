@@ -26,3 +26,7 @@ test("Clasificar búsqueda", () => {
   assert.deepEqual(clasificarBusqueda("+56 9 1234 5678"), { tipo: "telefono", valor: "56912345678" });
   assert.equal(clasificarBusqueda("Juan Pérez").tipo, "nombre");
 });
+test("hashDato es SHA-256 hex", async () => {
+  const { hashDato } = await import("../public/js/utils.js");
+  assert.equal(await hashDato("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
+});

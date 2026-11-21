@@ -15,7 +15,8 @@ service cloud.firestore {
     }
 
     match /reportes/{id} {
-      // Público: solo reportes aprobados. Autor y admin ven los suyos/pendientes.
+      // Público: solo reportes aprobados. Nunca contiene RUT ni teléfono reales:
+      // solo hash SHA-256 (para buscar) y versión enmascarada (para mostrar).
       allow get, list: if resource.data.estado == 'aprobado'
                        || isAdmin()
                        || (signedIn() && resource.data.creadoPor == request.auth.uid);
@@ -23,8 +24,8 @@ service cloud.firestore {
       // Crear: con login, siempre entra como 'pendiente' (moderación previa).
       allow create: if signedIn()
         && request.resource.data.keys().hasOnly(
-             ['telefono','titular','rut','motivo','evidenciaPath','nombreTokens',
-              'estado','creadoPor','creadoEn','aceptaTerminos'])
+             ['rutHash','rutMask','telHash','telMask','titular','motivo','evidenciaPath',
+              'nombreTokens','estado','creadoPor','creadoEn','aceptaTerminos'])
         && request.resource.data.keys().hasAll(
              ['titular','motivo','nombreTokens','estado','creadoPor','creadoEn','aceptaTerminos'])
         && request.resource.data.estado == 'pendiente'
@@ -33,11 +34,17 @@ service cloud.firestore {
         && request.resource.data.aceptaTerminos == true
         && str(request.resource.data.titular, 3, 80)
         && str(request.resource.data.motivo, 20, 1000)
-        && (!('telefono' in request.resource.data) || request.resource.data.telefono.matches('^\\+?[0-9]{8,12}$'))
-        && (!('rut' in request.resource.data) || request.resource.data.rut.matches('^[0-9]{7,8}-[0-9K]$'))
-        && ('telefono' in request.resource.data || 'rut' in request.resource.data)
+        && ('rutHash' in request.resource.data) == ('rutMask' in request.resource.data)
+        && ('telHash' in request.resource.data) == ('telMask' in request.resource.data)
+        && ('rutHash' in request.resource.data || 'telHash' in request.resource.data)
+        && (!('rutHash' in request.resource.data) || request.resource.data.rutHash.matches('^[0-9a-f]{64}$'))
+        && (!('telHash' in request.resource.data) || request.resource.data.telHash.matches('^[0-9a-f]{64}$'))
+        && (!('rutMask' in request.resource.data) || request.resource.data.rutMask.matches('^[0-9]{1,2}[.][0-9]{3}[.][*]{3}-[0-9K]$'))
+        && (!('telMask' in request.resource.data) || request.resource.data.telMask.matches('^(\\+56 9 )?[*]{4} ?[0-9]{4}$'))
         && (!('evidenciaPath' in request.resource.data)
             || request.resource.data.evidenciaPath.matches('^evidencias/' + request.auth.uid + '/' + id + '/[A-Za-z0-9._-]{1,80}$'))
+        // El dato real debe ir en el mismo lote, en privado/datos.
+        && existsAfter(/databases/$(database)/documents/reportes/$(id)/privado/datos)
         && request.resource.data.nombreTokens is list
         && request.resource.data.nombreTokens.size() <= 8;
 
@@ -48,6 +55,29 @@ service cloud.firestore {
         && request.resource.data.estado in ['pendiente','aprobado','rechazado','retirado'];
 
       allow delete: if isAdmin();
+
+      // RUT y teléfono reales: solo autor y admin.
+      match /privado/{docId} {
+        function padre() { return getAfter(/databases/$(database)/documents/reportes/$(id)).data; }
+        function coincide(campo, hashCampo) {
+          return (campo in request.resource.data) == (hashCampo in padre())
+            && (!(campo in request.resource.data)
+                || hashing.sha256(request.resource.data[campo]).toHexString().lower() == padre()[hashCampo]);
+        }
+        allow get: if isAdmin()
+          || (signedIn() && get(/databases/$(database)/documents/reportes/$(id)).data.creadoPor == request.auth.uid);
+        allow create: if signedIn()
+          && docId == 'datos'
+          && !exists(/databases/$(database)/documents/reportes/$(id))
+          && padre().creadoPor == request.auth.uid
+          && request.resource.data.keys().hasOnly(['rut','telefono'])
+          && (!('telefono' in request.resource.data) || request.resource.data.telefono.matches('^[0-9]{8,12}$'))
+          && (!('rut' in request.resource.data) || request.resource.data.rut.matches('^[0-9]{7,8}-[0-9K]$'))
+          && coincide('rut', 'rutHash')
+          && coincide('telefono', 'telHash');
+        allow list, update: if false;
+        allow delete: if isAdmin();
+      }
     }
 
     // Derecho a réplica / descargo: cualquiera con login puede enviar; solo admin lee.

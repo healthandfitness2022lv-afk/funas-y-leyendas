@@ -77,3 +77,12 @@ export function extensionSegura(file) {
   const map = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
   return map[file?.type] || null;
 }
+
+/**
+ * Hash SHA-256 (hex) de un RUT o teléfono normalizado. Lo público guarda solo el hash
+ * y la versión enmascarada; el dato real queda en reportes/{id}/privado/datos.
+ */
+export async function hashDato(valor) {
+  const buf = await globalThis.crypto.subtle.digest("SHA-256", new TextEncoder().encode(valor));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, "0")).join("");
+}
