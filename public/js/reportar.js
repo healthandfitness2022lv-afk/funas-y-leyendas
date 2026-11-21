@@ -1,9 +1,9 @@
 import { db, storage, auth, montarSesion, mostrarError, mostrarAviso } from "./app.js";
 import {
-  collection, doc, setDoc, serverTimestamp
+  collection, doc, writeBatch, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { ref, uploadBytes } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
-import { normalizarRut, normalizarTelefono, tokensNombre, extensionSegura } from "./utils.js";
+import { normalizarRut, normalizarTelefono, tokensNombre, extensionSegura, hashDato, enmascararRut, enmascararTelefono } from "./utils.js";
 
 const form = document.getElementById("form-reporte");
 const bloqueo = document.getElementById("requiere-login");
@@ -50,14 +50,20 @@ form.addEventListener("submit", async (ev) => {
       creadoEn: serverTimestamp(),
       aceptaTerminos: true,
     };
-    if (telefono) data.telefono = telefono;
-    if (rut) data.rut = rut;
+    const privado = {};
+    if (telefono) { data.telMask = enmascararTelefono(telefono); privado.telefono = telefono; }
+    if (rut) { data.rutMask = enmascararRut(rut); privado.rut = rut; }
     if (archivo) {
       const path = `evidencias/${user.uid}/${docRef.id}/evidencia.${extensionSegura(archivo)}`;
       await uploadBytes(ref(storage, path), archivo, { contentType: archivo.type });
       data.evidenciaPath = path;
     }
-    await setDoc(docRef, data);
+    // Público (máscara), privado (dato real) e índice de búsqueda en una sola escritura atómica.
+    const lote = writeBatch(db);
+    lote.set(docRef, data);
+    lote.set(doc(db, "reportes", docRef.id, "privado", "datos"), privado);
+    for (const v of Object.values(privado)) lote.set(doc(db, "indice", await hashDato(v), "r", docRef.id), {});
+    await lote.commit();
     form.reset();
     mostrarAviso("Reporte enviado. Será revisado por moderación antes de publicarse.");
   } catch (e) {

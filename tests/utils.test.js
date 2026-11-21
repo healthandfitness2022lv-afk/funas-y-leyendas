@@ -18,11 +18,15 @@ test("Tokens", () => {
   assert.deepEqual(tokensNombre("José Ñuñez de la Peña"), ["jose", "nunez", "pena"]);
 });
 test("Máscaras", () => {
-  assert.equal(enmascararRut("12345678-5"), "12.345.***-5");
-  assert.equal(enmascararTelefono("56912345678"), "+56 9 **** 5678");
+  assert.equal(enmascararRut("12345678-5"), "**.***.***-5");
+  assert.equal(enmascararTelefono("56912345678"), "+56 9 **** **78");
 });
 test("Clasificar búsqueda", () => {
   assert.deepEqual(clasificarBusqueda("12.345.678-5"), { tipo: "rut", valor: "12345678-5" });
   assert.deepEqual(clasificarBusqueda("+56 9 1234 5678"), { tipo: "telefono", valor: "56912345678" });
   assert.equal(clasificarBusqueda("Juan Pérez").tipo, "nombre");
+});
+test("hashDato es SHA-256 hex", async () => {
+  const { hashDato } = await import("../public/js/utils.js");
+  assert.equal(await hashDato("abc"), "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad");
 });

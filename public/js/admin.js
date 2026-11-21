@@ -25,7 +25,9 @@ async function cargar() {
     const snap = await getDocs(query(collection(db, "reportes"), where("estado", "==", filtro.value), limit(100)));
     panel.replaceChildren();
     if (snap.empty) panel.append(el("p", { class: "muted" }, "Nada por aquí."));
-    snap.forEach((d) => panel.append(tarjeta(d.id, d.data())));
+    const privados = await Promise.all(snap.docs.map((d) =>
+      getDoc(doc(db, "reportes", d.id, "privado", "datos")).then((p) => p.data() || {}).catch(() => ({}))));
+    snap.docs.forEach((d, i) => panel.append(tarjeta(d.id, { ...d.data(), ...privados[i] })));
   } catch (e) { mostrarError(e); }
 }
 

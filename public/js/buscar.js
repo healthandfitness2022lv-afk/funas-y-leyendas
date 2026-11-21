@@ -1,9 +1,9 @@
 import { db, storage, auth, el, montarSesion, mostrarError, fecha } from "./app.js";
 import {
-  collection, query, where, getDocs, limit
+  collection, query, where, getDocs, getDoc, doc, limit
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import { ref, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-storage.js";
-import { clasificarBusqueda, enmascararRut, enmascararTelefono } from "./utils.js";
+import { clasificarBusqueda, hashDato } from "./utils.js";
 
 montarSesion();
 
@@ -19,15 +19,17 @@ form.addEventListener("submit", async (ev) => {
   lista.append(el("p", { class: "muted" }, "Buscando…"));
   try {
     const base = collection(db, "reportes");
-    let qs;
-    if (q.tipo === "rut") qs = query(base, where("estado", "==", "aprobado"), where("rut", "==", q.valor), limit(50));
-    else if (q.tipo === "telefono") qs = query(base, where("estado", "==", "aprobado"), where("telefono", "==", q.valor), limit(50));
-    else {
+    let docs;
+    if (q.tipo === "nombre") {
       const clave = [...q.valor].sort((a, b) => b.length - a.length)[0];
-      qs = query(base, where("estado", "==", "aprobado"), where("nombreTokens", "array-contains", clave), limit(50));
+      const snap = await getDocs(query(base, where("estado", "==", "aprobado"), where("nombreTokens", "array-contains", clave), limit(50)));
+      docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+    } else {
+      // RUT/teléfono: índice por hash -> IDs de reporte -> solo se leen los aprobados.
+      const idx = await getDocs(query(collection(db, "indice", await hashDato(q.valor), "r"), limit(50)));
+      const leidos = await Promise.all(idx.docs.map((d) => getDoc(doc(db, "reportes", d.id)).catch(() => null)));
+      docs = leidos.filter((d) => d?.exists() && d.data().estado === "aprobado").map((d) => ({ id: d.id, ...d.data() }));
     }
-    const snap = await getDocs(qs);
-    let docs = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
     if (q.tipo === "nombre") docs = docs.filter((d) => q.valor.every((t) => d.nombreTokens?.includes(t)));
     docs.sort((a, b) => (b.creadoEn?.toMillis?.() || 0) - (a.creadoEn?.toMillis?.() || 0));
     pintar(docs);
@@ -46,8 +48,8 @@ function pintar(docs) {
     const card = el("article", { class: "card" },
       el("h3", {}, d.titular),
       el("dl", {},
-        d.rut ? el("div", {}, el("dt", {}, "RUT"), el("dd", {}, enmascararRut(d.rut))) : null,
-        d.telefono ? el("div", {}, el("dt", {}, "Teléfono"), el("dd", {}, enmascararTelefono(d.telefono))) : null,
+        d.rutMask ? el("div", {}, el("dt", {}, "RUT"), el("dd", {}, d.rutMask)) : null,
+        d.telMask ? el("div", {}, el("dt", {}, "Teléfono"), el("dd", {}, d.telMask)) : null,
         el("div", {}, el("dt", {}, "Fecha"), el("dd", {}, fecha(d.creadoEn)))
       ),
       el("p", { class: "motivo" }, d.motivo),

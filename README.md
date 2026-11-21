@@ -22,10 +22,12 @@ Local: `npm run serve` (emuladores) y abrir `public/` con cualquier servidor en 
 
 ## Pruebas
 - `npm run test:utils` → validación de RUT, teléfono, máscaras y búsqueda.
-- `npm run test:rules` → 25 pruebas de reglas Firestore/Storage en emulador (requiere Java).
+- `npm run test:rules` → 34 pruebas de reglas Firestore/Storage en emulador (requiere Java).
 
 ## Modelo de datos
-`reportes/{id}`: `titular`, `rut` (`12345678-K`), `telefono` (`569XXXXXXXX`), `motivo`, `evidenciaPath`, `nombreTokens[]`, `estado` (`pendiente|aprobado|rechazado|retirado`), `creadoPor`, `creadoEn`, `aceptaTerminos`, `notaModeracion`, `moderadoPor`, `moderadoEn`.
+`reportes/{id}` (público si está aprobado): `titular`, `rutMask` (`**.***.***-K`), `telMask` (`+56 9 **** **78`), `motivo`, `evidenciaPath`, `nombreTokens[]`, `estado` (`pendiente|aprobado|rechazado|retirado`), `creadoPor`, `creadoEn`, `aceptaTerminos`, `notaModeracion`, `moderadoPor`, `moderadoEn`.
+`reportes/{id}/privado/datos` (solo autor y admin): `rut` (`12345678-K`), `telefono` (`569XXXXXXXX`). Se crea en el mismo lote que el reporte.
+`indice/{sha256(dato)}/r/{reporteId}`: índice de búsqueda por RUT/teléfono exacto; las reglas verifican que el hash corresponda al dato privado.
 `descargos/{id}`: `reporteId`, `mensaje`, `contacto`, `creadoPor`, `creadoEn` (solo admin lee).
 `admins/{uid}`: se crea a mano en la consola.
 Storage: `evidencias/{uid}/{reporteId}/evidencia.{ext}`.
@@ -34,6 +36,7 @@ Storage: `evidencias/{uid}/{reporteId}/evidencia.{ext}`.
 - Público solo lee reportes `aprobado`. Nadie puede autoaprobarse ni suplantar autor.
 - Esquema estricto (campos permitidos, largos, formato RUT/teléfono). Admin solo cambia estado/nota, no el contenido.
 - Evidencia: sube solo el dueño, solo imágenes < 5 MB, sin sobrescribir; la ven autor, admin o usuarios logueados si el reporte está aprobado.
+- El documento público no contiene RUT, teléfono ni sus hashes; la máscara solo muestra el DV del RUT y los 2 últimos dígitos del teléfono. Para buscar se consulta el índice por hash exacto, que no se puede listar completo. Límite: alguien podría probar RUTs uno por uno contra el índice; mitigar con App Check o una Cloud Function con clave secreta.
 - Todo lo demás denegado.
 
 ## Riesgos legales y mitigaciones
